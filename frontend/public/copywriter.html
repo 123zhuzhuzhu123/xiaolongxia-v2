@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小龙虾 V2 - 内容生产工作台</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1f2937; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { margin: 0; font-size: 18px; color: #f43f5e; }
+    .container { display: flex; gap: 16px; padding: 24px; }
+    .panel { flex: 1; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 16px; min-height: 60vh; }
+    .panel h2 { margin: 0 0 16px; font-size: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; }
+    .toolbar { margin-bottom: 12px; }
+    select, button { padding: 6px 12px; border-radius: 4px; border: 1px solid #d1d5db; background: #fff; font-size: 14px; cursor: pointer; }
+    button { background: #f43f5e; color: #fff; border: none; }
+    button:disabled { background: #9ca3af; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #f3f4f6; }
+    th { color: #6b7280; font-weight: 500; }
+    .ellipsis { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .version { margin-bottom: 12px; padding: 12px; border-radius: 6px; background: #f8fafc; border: 1px solid #e5e7eb; }
+    .version.selected { background: #fff2f0; border-color: #ffccc7; }
+    .version .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #e0f2fe; color: #0369a1; font-size: 12px; }
+    .tag.selected { background: #fee2e2; color: #b91c1c; }
+    .tag.score { background: #dcfce7; color: #15803d; }
+    .version p { margin: 8px 0; line-height: 1.6; }
+    .version-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .version-actions button { font-size: 12px; padding: 4px 10px; background: #fff; color: #374151; border: 1px solid #d1d5db; }
+    .version-actions button.primary { background: #f43f5e; color: #fff; border: none; }
+    .empty { color: #9ca3af; padding: 24px 0; text-align: center; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .modal { background: #fff; border-radius: 8px; width: 80%; max-width: 800px; max-height: 80vh; overflow: auto; padding: 24px; }
+    .modal h3 { margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .card { background: #f9fafb; border-radius: 6px; padding: 12px; }
+    .card strong { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .shot-table th, .shot-table td { font-size: 13px; padding: 8px; }
+    .close { float: right; background: transparent; color: #374151; border: none; font-size: 20px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>小龙虾 V2 · 内容生产工作台</h1>
+    <span style="color:#6b7280;font-size:14px;">project_id=2</span>
+  </header>
+
+  <div class="container">
+    <div class="panel">
+      <h2>选择素材</h2>
+      <div class="toolbar">
+        <select id="skuSelect">
+          <option value="">选择主推 SKU（可选）</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr><th>标题</th><th>点赞</th><th>操作</th></tr>
+        </thead>
+        <tbody id="contentList"><tr><td colspan="3" class="empty">加载中...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>文案草稿</h2>
+      <div id="draftList"><div class="empty">加载中...</div></div>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <script>
+    const API = 'http://127.0.0.1:8001/api/v1';
+    const PROJECT_ID = 2;
+
+    async function apiGet(path) {
+      const res = await fetch(API + path);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    async function apiPost(path, body = {}) {
+      const res = await fetch(API + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    let contents = [];
+    let drafts = [];
+    let skus = [];
+
+    async function loadContents() {
+      contents = await apiGet(`/contents?project_id=${PROJECT_ID}&limit=100`);
+      const tbody = document.getElementById('contentList');
+      tbody.innerHTML = contents.map(c => `
+        <tr>
+          <td class="ellipsis" title="${c.title || ''}">${c.title || '（无标题）'}</td>
+          <td>${c.likes || 0}</td>
+          <td><button onclick="generateCopy(${c.id})" id="btn-gen-${c.id}">生成文案</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadSkus() {
+      skus = await apiGet(`/copywriter/skus?project_id=${PROJECT_ID}`);
+      const sel = document.getElementById('skuSelect');
+      skus.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.sku_name;
+        sel.appendChild(opt);
+      });
+    }
+
+    async function loadDrafts() {
+      drafts = await apiGet(`/copy/drafts?project_id=${PROJECT_ID}`);
+      const root = document.getElementById('draftList');
+      if (drafts.length === 0) {
+        root.innerHTML = '<div class="empty">暂无文案草稿，请从左侧选择素材生成</div>';
+        return;
+      }
+      root.innerHTML = drafts.map(d => `
+        <div style="margin-bottom:16px;">
+          <div style="font-weight:500;margin-bottom:8px;">${d.topic || '无主题'} <span style="color:#9ca3af;font-size:12px;">${new Date(d.created_at).toLocaleString()}</span></div>
+          ${d.versions.map(v => `
+            <div class="version ${v.selected ? 'selected' : ''}">
+              <div class="meta">
+                <span class="tag">${v.formula_key}</span>
+                ${v.selected ? '<span class="tag selected">已选</span>' : ''}
+                ${v.scores?.estimated_hook_rate ? `<span class="tag score">预估转化率 ${(v.scores.estimated_hook_rate * 100).toFixed(0)}%</span>` : ''}
+                ${v.quality_review?.overall ? `<span class="tag score">综合分 ${v.quality_review.overall}</span>` : ''}
+              </div>
+              <strong>${v.title || ''}</strong>
+              <p>${v.body}</p>
+              <div class="version-actions">
+                <button onclick="scoreVersion(${v.id})">质量评分</button>
+                <button onclick="storyboard(${v.id})">生成分镜</button>
+                <button class="primary" onclick="selectVersion(${v.id})" ${v.selected ? 'disabled' : ''}>${v.selected ? '已选择' : '选择该版本'}</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    async function generateCopy(contentId) {
+      const btn = document.getElementById(`btn-gen-${contentId}`);
+      btn.disabled = true;
+      btn.textContent = '生成中...';
+      try {
+        const skuId = document.getElementById('skuSelect').value || null;
+        await apiPost(`/copy/generate/${contentId}`, { project_id: PROJECT_ID, sku_id: skuId ? Number(skuId) : null });
+        await loadDrafts();
+      } catch (e) {
+        alert('生成失败: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '生成文案';
+      }
+    }
+
+    async function scoreVersion(versionId) {
+      try {
+        const res = await apiPost(`/copy/versions/${versionId}/score`);
+        const qr = res.quality_review;
+        const dims = qr.dimensions || {};
+        const dimHtml = Object.entries(dims).map(([k, v]) => `
+          <div class="card"><strong>${k}</strong><div style="font-size:20px;font-weight:600;">${v}</div></div>
+        `).join('');
+        const suggestions = (qr.suggestions || []).map(s => `<li>${s}</li>`).join('');
+        showModal(`
+          <h3>文案质量评分</h3>
+          <div class="grid">
+            <div class="card"><strong>综合分</strong><div style="font-size:24px;font-weight:600;">${qr.overall || '-'}</div></div>
+            <div class="card"><strong>是否通过</strong><div>${qr.pass ? '通过' : '不通过'}</div></div>
+          </div>
+          <h4 style="margin-top:16px;">维度评分</h4>
+          <div class="grid">${dimHtml}</div>
+          <h4 style="margin-top:16px;">优化建议</h4>
+          <ul>${suggestions}</ul>
+        `);
+        await loadDrafts();
+      } catch (e) {
+        alert('评分失败: ' + e.message);
+      }
+    }
+
+    async function storyboard(versionId) {
+      try {
+        const res = await apiPost(`/copy/versions/${versionId}/storyboard`);
+        const sb = res.storyboard;
+        const shots = (sb.shots || []).map(s => `
+          <tr>
+            <td>${s.scene_no}</td>
+            <td>${s.shot_type}</td>
+            <td><strong>画面：</strong>${s.visual}<br><strong>音频：</strong>${s.audio}<br><strong>道具：</strong>${(s.props || []).join('、')}</td>
+            <td>${s.duration_seconds}s</td>
+          </tr>
+        `).join('');
+        showModal(`
+          <h3>分镜脚本 · 总时长 ${sb.total_duration || '-'}s</h3>
+          <table class="shot-table">
+            <thead><tr><th>镜号</th><th>景别</th><th>画面/音频/道具</th><th>时长</th></tr></thead>
+            <tbody>${shots}</tbody>
+          </table>
+        `);
+      } catch (e) {
+        alert('分镜生成失败: ' + e.message);
+      }
+    }
+
+    async function selectVersion(versionId) {
+      try {
+        await apiPost(`/copy/versions/${versionId}/select`);
+        await loadDrafts();
+      } catch (e) {
+        alert('选择失败: ' + e.message);
+      }
+    }
+
+    function showModal(html) {
+      const root = document.getElementById('modalRoot');
+      root.innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+          <div class="modal">
+            <button class="close" onclick="closeModal()">&times;</button>
+            ${html}
+          </div>
+        </div>
+      `;
+    }
+
+    function closeModal() {
+      document.getElementById('modalRoot').innerHTML = '';
+    }
+
+    (async () => {
+      await Promise.all([loadContents(), loadSkus(), loadDrafts()]);
+    })();
+  </script>
+</body>
+</html>

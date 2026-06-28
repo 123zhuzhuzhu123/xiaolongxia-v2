@@ -1,4 +1,3 @@
-import { ConfigProvider } from "antd";
 import "antd/dist/reset.css";
 
 export const metadata = {
@@ -14,9 +13,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body style={{ margin: 0, fontFamily: "system-ui, sans-serif" }}>
-        <ConfigProvider theme={{ token: { colorPrimary: "#f43f5e" } }}>
-          {children}
-        </ConfigProvider>
+        {children}
       </body>
     </html>
   );

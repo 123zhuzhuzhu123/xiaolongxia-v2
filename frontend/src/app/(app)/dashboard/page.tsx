@@ -1,19 +1,13 @@
-"use client";
-
 import { Card, Statistic, Row, Col } from "antd";
-import { useEffect, useState } from "react";
 import { fetchContents, fetchCreators } from "@/lib/api";
 
 const PROJECT_ID = 2;
 
-export default function DashboardPage() {
-  const [contents, setContents] = useState([]);
-  const [creators, setCreators] = useState([]);
-
-  useEffect(() => {
-    fetchContents(PROJECT_ID, 1000).then(setContents);
-    fetchCreators(PROJECT_ID).then(setCreators);
-  }, []);
+export default async function DashboardPage() {
+  const [contents, creators] = await Promise.all([
+    fetchContents(PROJECT_ID, 1000),
+    fetchCreators(PROJECT_ID),
+  ]);
 
   const totalLikes = contents.reduce((sum: number, c: any) => sum + (c.likes || 0), 0);
   const totalComments = contents.reduce((sum: number, c: any) => sum + (c.comments || 0), 0);

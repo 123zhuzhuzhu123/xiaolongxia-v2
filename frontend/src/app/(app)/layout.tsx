@@ -1,6 +1,6 @@
 "use client";
 
-import { Layout, Menu, Typography } from "antd";
+import { ConfigProvider, Layout, Menu, Typography } from "antd";
 import {
   DashboardOutlined,
   SearchOutlined,
@@ -23,7 +23,8 @@ const menuItems = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <ConfigProvider theme={{ token: { colorPrimary: "#f43f5e" } }}>
+      <Layout style={{ minHeight: "100vh" }}>
       <Sider theme="light" width={200}>
         <div style={{ padding: 16 }}>
           <Title level={5} style={{ margin: 0, color: "#f43f5e" }}>小龙虾 V2</Title>
@@ -38,5 +39,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Content style={{ padding: 24, background: "#f8fafc" }}>{children}</Content>
       </Layout>
     </Layout>
+    </ConfigProvider>
   );
 }

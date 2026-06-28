@@ -27,3 +27,36 @@ export async function createProject(name: string, description?: string) {
   const res = await api.post("/projects", { name, description });
   return res.data;
 }
+
+export async function fetchSkus(projectId: number) {
+  const res = await api.get(`/copywriter/skus?project_id=${projectId}`);
+  return res.data;
+}
+
+export async function fetchCopyDrafts(projectId: number) {
+  const res = await api.get(`/copy/drafts?project_id=${projectId}`);
+  return res.data;
+}
+
+export async function generateCopy(contentId: number, projectId: number, skuId?: number | null) {
+  const res = await api.post(`/copy/generate/${contentId}`, {
+    project_id: projectId,
+    sku_id: skuId,
+  });
+  return res.data;
+}
+
+export async function scoreCopyVersion(versionId: number) {
+  const res = await api.post(`/copy/versions/${versionId}/score`);
+  return res.data;
+}
+
+export async function generateStoryboard(versionId: number) {
+  const res = await api.post(`/copy/versions/${versionId}/storyboard`);
+  return res.data;
+}
+
+export async function selectCopyVersion(versionId: number) {
+  const res = await api.post(`/copy/versions/${versionId}/select`);
+  return res.data;
+}
