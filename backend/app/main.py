@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import analysis, contents, creators, crawl_jobs, projects
+from app.api.v1 import analysis, contents, copy, copywriter, creators, crawl_jobs, projects
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.db.session import init_db
@@ -47,6 +47,8 @@ app.include_router(creators.router, prefix="/api/v1")
 app.include_router(contents.router, prefix="/api/v1")
 app.include_router(crawl_jobs.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
+app.include_router(copywriter.router, prefix="/api/v1")
+app.include_router(copy.router, prefix="/api/v1")
 
 
 @app.get("/health")
