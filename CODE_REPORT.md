@@ -3,7 +3,7 @@
 **工具标识**: Kimi Code CLI  
 **时间**: 2026-06-28  
 **分支**: main  
-**Commit**: 475a97b
+**Commit**: 6196027
 
 ## 本次完成
 
@@ -38,9 +38,13 @@
 ## 验证结果
 
 - 后端启动正常：`http://127.0.0.1:8001/health` OK
+- `alembic check` 无模型-数据库漂移 ✅
 - `POST /api/v1/copy/generate/3` 返回 3 条文案版本 ✅
-- `POST /api/v1/copy/versions/1/score` 返回质量评分 overall 7.8 ✅
-- `POST /api/v1/copy/versions/1/storyboard` 返回 9 镜头分镜 ✅
+- `POST /api/v1/copy/generate/12`（无 creator 内容）成功生成，creator_id=null ✅
+- 指定不存在 `sku_id` 返回 400 ✅
+- `POST /api/v1/copy/versions/4/score` 返回质量评分 overall 7.8 ✅
+- `POST /api/v1/copy/versions/4/storyboard` 返回 12 镜头分镜 ✅
+- `/api/v1/copywriter/formulas?project_id=2` 列表正常 ✅
 - Alembic 迁移已应用到 `xiaolongxia_v2`
 
 ## 进行中 / 下一步
@@ -48,6 +52,16 @@
 - [ ] 前端文案工作台页面（选择内容 → 生成文案 → 评分 → 分镜）
 - [ ] 文案版本对比与人工编辑
 - [ ] 分镜导出/投放侧对接
+
+## Review 发现并修复的问题
+
+1. `CopyDraft.creator_id` 未设 nullable，导致无 creator 的内容生成文案失败 → 已改为 `int | None` 并新增迁移
+2. `generate_copy` 指定不存在的 `sku_id` 时静默使用全部 SKU → 已改为显式抛错
+3. `main.py` 中 `import copy` 与 Python 标准库 `copy` 同名 → 已改为 `from app.api.v1.copy import router as copy_router`
+4. `schemas/copywriter.py` 残留旧版文案生成 schema → 已清理
+5. `Formula`/`Hook`/`Sku` response schema 缺少 `extra`/`source_content_ids` 等字段 → 已补齐
+6. 资产列表按 `avg_score`/`median_likes` 排序时 NULL 可能排在最前 → 已改为 `nulls_last()`
+7. `services/copy` 和 `services/copywriter` 缺少 `__init__.py` → 已补充
 
 ## 已知阻塞
 
