@@ -1,0 +1,11 @@
+version: "3.9"
+
+# V2 与旧系统共用 PostgreSQL + Redis 基础设施。
+# 如果旧系统已启动 docker-compose，可直接使用 localhost:5432 / localhost:6379。
+# 如需独立 Redis 实例，取消下面 redis 服务的注释。
+
+# services:
+#   redis:
+#     image: redis:7
+#     ports:
+#       - "6379:6379"

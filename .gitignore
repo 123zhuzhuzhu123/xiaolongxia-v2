@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Next.js
+.next/
+out/
+*.tsbuildinfo
+node_modules/
+
+# Logs
+*.log
+
+# Storage
+storage/
+pgdata/
+pgdata_v2/
+
+# IDE
+.vscode/
+.idea/
