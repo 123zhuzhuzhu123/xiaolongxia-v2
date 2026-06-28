@@ -27,7 +27,7 @@ def list_formulas(db: Session, project_id: int, goal: str | None = None) -> list
     q = db.query(Formula).filter(Formula.project_id == project_id)
     if goal:
         q = q.filter(Formula.goal == goal)
-    return q.order_by(Formula.avg_score.desc()).all()
+    return q.order_by(Formula.avg_score.desc().nulls_last()).all()
 
 
 def get_formula(db: Session, formula_id: int) -> Formula | None:
@@ -51,7 +51,7 @@ def list_hooks(db: Session, project_id: int, hook_type: str | None = None) -> li
     q = db.query(Hook).filter(Hook.project_id == project_id)
     if hook_type:
         q = q.filter(Hook.hook_type == hook_type)
-    return q.order_by(Hook.median_likes.desc()).all()
+    return q.order_by(Hook.median_likes.desc().nulls_last()).all()
 
 
 def create_sku(db: Session, obj: SkuCreate) -> Sku:

@@ -8,10 +8,8 @@ from sqlalchemy.orm import Session
 from app.core.llm_router import generate
 from app.models.content import Content
 from app.models.copy import CopyDraft, CopyVersion
-from app.models.creator import Creator
 from app.models.formula import Formula
 from app.models.hook import Hook
-from app.models.project import Project
 from app.models.sku import Sku
 from app.services.comment.audience import segment_audience_by_content
 from app.services.content.viral_factors import analyze_viral_factors
@@ -134,10 +132,6 @@ def generate_copy(
     if content.project_id != project_id:
         raise ValueError("Content does not belong to project")
 
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise ValueError("Project not found")
-
     voice = content.creator.persona if content.creator else None
     factors = content.viral_factors or analyze_viral_factors(content)
     audience = segment_audience_by_content(db, content_id)
@@ -146,11 +140,13 @@ def generate_copy(
     formulas = db.query(Formula).filter(Formula.project_id == project_id).all()
     hooks = db.query(Hook).filter(Hook.project_id == project_id).all()
 
-    selected_sku = None
     if sku_id:
-        selected_sku = db.query(Sku).filter(Sku.id == sku_id, Sku.project_id == project_id).first()
-        if selected_sku:
-            skus = [selected_sku]
+        selected_sku = db.query(Sku).filter(
+            Sku.id == sku_id, Sku.project_id == project_id
+        ).first()
+        if not selected_sku:
+            raise ValueError("SKU not found or does not belong to project")
+        skus = [selected_sku]
 
     prompt = COPY_GENERATION_PROMPT.format(
         platform=platform,

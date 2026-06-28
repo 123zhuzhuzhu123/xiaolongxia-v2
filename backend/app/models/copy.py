@@ -13,7 +13,9 @@ class CopyDraft(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"))
-    creator_id: Mapped[int] = mapped_column(ForeignKey("creators.id"))
+    creator_id: Mapped[int | None] = mapped_column(
+        ForeignKey("creators.id"), nullable=True
+    )
     sku_id: Mapped[int | None] = mapped_column(ForeignKey("skus.id"), nullable=True)
 
     goal: Mapped[str] = mapped_column(String(20))

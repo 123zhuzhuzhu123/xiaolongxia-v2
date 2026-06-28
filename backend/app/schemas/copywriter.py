@@ -25,6 +25,7 @@ class FormulaResponse(FormulaBase):
     usage_count: int
     avg_score: float | None = None
     tags: list | None = None
+    extra: dict | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -47,6 +48,8 @@ class HookResponse(HookBase):
     usage_count: int
     median_likes: int | None = None
     median_comments: int | None = None
+    source_content_ids: list | None = None
+    extra: dict | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -70,38 +73,7 @@ class SkuResponse(SkuBase):
 
     id: int
     project_id: int
+    extra: dict | None = None
     created_at: datetime
     updated_at: datetime
 
-
-class CopyGenerateRequest(BaseModel):
-    project_id: int
-    creator_id: int
-    sku_id: int | None = None
-    goal: str = "conversion"  # conversion / engagement / brand
-    platform: str = "douyin"
-    topic: str | None = None
-    version_count: int = 3
-
-
-class CopyVersionResponse(BaseModel):
-    id: int
-    draft_id: int
-    formula_key: str
-    title: str | None = None
-    body: str
-    scores: dict
-    quality_review: dict | None = None
-    created_at: datetime
-
-
-class StoryboardGenerateRequest(BaseModel):
-    copy_version_id: int
-    duration: int = 15
-
-
-class StoryboardResponse(BaseModel):
-    id: int
-    copy_version_id: int
-    shots: list
-    created_at: datetime
