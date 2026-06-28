@@ -3,7 +3,7 @@
 **工具标识**: Kimi Code CLI  
 **时间**: 2026-06-28  
 **分支**: main  
-**Commit**: 6196027
+**Commit**: 650cd33
 
 ## 本次完成
 
@@ -15,7 +15,7 @@
    - API `/api/v1/copywriter/*` 管理公式/钩子/SKU
 
 2. **多版本文案生成**
-   - 新增 `CopyDraft` / `CopyVersion` 模型及迁移 `e908b1616b27`、`0cd81009aa7d`
+   - 新增 `CopyDraft` / `CopyVersion` 模型及迁移 `e908b1616b27`、`0cd81009aa7d`、`8ebe5bfcdea6`
    - 服务 `app/services/copy/generation.py`
    - 输入：内容标题/描述、爆款因子、创作者声纹、SKU、公式、钩子、评论人群洞察
    - 输出：3 个不同角度口播文案版本，含 formula_key / hook_type / body / CTA / risk_words
@@ -31,9 +31,11 @@
    - 输出 8-12 镜头：shot_type / visual / audio / duration / props / note
    - API `POST /api/v1/copy/versions/{version_id}/storyboard`
 
-5. **路由与模型补全**
-   - 注册 `/api/v1/copy` 路由
-   - 补充 `CopyDraft` 关联关系（project / creator / sku）
+5. **前端文案工作台**
+   - Next.js 页面 `frontend/src/app/(app)/copywriter/page.tsx`
+   - 扩展 API 客户端 `frontend/src/lib/api.ts`
+   - 独立静态工作台 `frontend/public/copywriter.html`（已验证可用）
+   - 支持：选择素材 → 指定 SKU → 生成文案 → 质量评分 → 生成分镜 → 选择版本
 
 ## 验证结果
 
@@ -45,13 +47,15 @@
 - `POST /api/v1/copy/versions/4/score` 返回质量评分 overall 7.8 ✅
 - `POST /api/v1/copy/versions/4/storyboard` 返回 12 镜头分镜 ✅
 - `/api/v1/copywriter/formulas?project_id=2` 列表正常 ✅
+- 静态工作台 `http://127.0.0.1:3002/copywriter.html` 可正常加载数据、生成文案 ✅
 - Alembic 迁移已应用到 `xiaolongxia_v2`
 
 ## 进行中 / 下一步
 
-- [ ] 前端文案工作台页面（选择内容 → 生成文案 → 评分 → 分镜）
+- [x] 前端文案工作台页面（选择内容 → 生成文案 → 评分 → 分镜）
 - [ ] 文案版本对比与人工编辑
 - [ ] 分镜导出/投放侧对接
+- [ ] 前端 Next.js 页面 hydration/样式问题根治
 
 ## Review 发现并修复的问题
 
@@ -66,3 +70,4 @@
 ## 已知阻塞
 
 - Downloader 直接采集因 CookieBridge 登录态失败返回 500；当前靠旧库 seed 数据验证功能链路。
+- Next.js 16 + Turbopack 在当前环境下存在 client component hydration/样式问题，已用 `public/copywriter.html` 静态工作台作为可用 fallback，Next.js 页面代码保留待后续根治。
